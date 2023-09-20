@@ -9,15 +9,25 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
 
-  // Check if the URL path ends with "/download"
-  if (url.pathname.endsWith("/download")) {
-    const headers = new Headers();
-    headers.set("Content-Disposition", `attachment; filename="${path.split('/').pop()}"`);
-    
-    // Optionally, set other headers like Content-Type if needed
-    // headers.set("Content-Type", "application/octet-stream");
+  // Check if the URL contains "/download/"
+  if (url.pathname.includes('/download/')) {
+    const fileUrl = url.href.replace('/download/', '/'); // Remove "/download/" from the URL
 
-    return new Response(obj.body, { headers });
+    // Fetch the content from the raw link and set appropriate headers for download
+    const response = await fetch(fileUrl);
+
+    if (response.status === 404) {
+      return new Response('File not found', { status: 404 });
+    }
+
+    const headers = new Headers(response.headers);
+    headers.set('Content-Disposition', 'attachment'); // Set content disposition to "attachment"
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: headers,
+    });
   } else {
     // Regular view behavior with appropriate headers
     const headers = new Headers();
