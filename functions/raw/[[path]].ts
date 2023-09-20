@@ -9,11 +9,15 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
 
-  // Check if the URL path ends with "/download"
-  if (url.pathname.endsWith("/download")) {
+  // Check if the URL has a "download" query parameter
+  if (url.searchParams.has("download")) {
     const headers = new Headers();
     headers.set("Content-Disposition", `attachment; filename="${path.split('/').pop()}"`);
     
+    // Set "Cache-Control" header for download requests
+    if (path.startsWith("_$flaredrive$/thumbnails/"))
+      headers.set("Cache-Control", "max-age=31536000");
+
     // Optionally, set other headers like Content-Type if needed
     // headers.set("Content-Type", "application/octet-stream");
 
@@ -22,6 +26,8 @@ export async function onRequestGet(context) {
     // Regular view behavior with appropriate headers
     const headers = new Headers();
     obj.writeHttpMetadata(headers);
+
+    // Set "Cache-Control" header for regular view behavior
     if (path.startsWith("_$flaredrive$/thumbnails/"))
       headers.set("Cache-Control", "max-age=31536000");
 
