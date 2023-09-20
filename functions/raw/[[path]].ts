@@ -11,18 +11,13 @@ export async function onRequestGet(context) {
 
   // Check if the URL path ends with "/download"
   if (url.pathname.endsWith("/download")) {
-    // Remove "/download" from the URL path and retrieve the content as usual
-    const newPath = path.replace(/\/download$/, '');
-    const objWithoutDownload = await bucket.get(newPath);
-
-    if (objWithoutDownload === null) return notFound();
-
     const headers = new Headers();
-    objWithoutDownload.writeHttpMetadata(headers);
-    if (newPath.startsWith("_$flaredrive$/thumbnails/"))
-      headers.set("Cache-Control", "max-age=31536000");
+    headers.set("Content-Disposition", `attachment; filename="${path.split('/').pop()}"`);
+    
+    // Optionally, set other headers like Content-Type if needed
+    // headers.set("Content-Type", "application/octet-stream");
 
-    return new Response(objWithoutDownload.body, { headers });
+    return new Response(obj.body, { headers });
   } else {
     // Regular view behavior with appropriate headers
     const headers = new Headers();
