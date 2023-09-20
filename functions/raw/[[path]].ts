@@ -9,25 +9,20 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
 
-  // Check if the URL contains "/download/"
-  if (url.pathname.includes('/download/')) {
-    const fileUrl = url.href.replace('/download/', '/'); // Remove "/download/" from the URL
+  // Check if the URL path ends with "/download"
+  if (url.pathname.endsWith("/download")) {
+    // Remove "/download" from the URL path and retrieve the content as usual
+    const newPath = path.replace(/\/download$/, '');
+    const objWithoutDownload = await bucket.get(newPath);
 
-    // Fetch the content from the raw link and set appropriate headers for download
-    const response = await fetch(fileUrl);
+    if (objWithoutDownload === null) return notFound();
 
-    if (response.status === 404) {
-      return new Response('File not found', { status: 404 });
-    }
+    const headers = new Headers();
+    objWithoutDownload.writeHttpMetadata(headers);
+    if (newPath.startsWith("_$flaredrive$/thumbnails/"))
+      headers.set("Cache-Control", "max-age=31536000");
 
-    const headers = new Headers(response.headers);
-    headers.set('Content-Disposition', 'attachment'); // Set content disposition to "attachment"
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: headers,
-    });
+    return new Response(objWithoutDownload.body, { headers });
   } else {
     // Regular view behavior with appropriate headers
     const headers = new Headers();
